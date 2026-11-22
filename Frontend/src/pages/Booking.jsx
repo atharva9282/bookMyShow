@@ -10,7 +10,7 @@ import { movies, cinemas, dates } from "../data";
 import { money } from "../utils/format";
 import { NotFound } from "../components/common/NotFound";
 import { createBooking } from "../services/bookingService";
-import { api } from "../api";
+import { api, localDate, toMovie } from "../api";
 
 export function Booking({ city, user, setUser, bookings, setBookings }) {
   const navigate = useNavigate();
@@ -20,6 +20,8 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
 
   const showId = params.get("showId");
   const [show, setShow] = useState(null);
+  const [loadingShow, setLoadingShow] = useState(true);
+  const [movie, setMovie] = useState(null);
   const [selected, setSelected] = useState([]),
     [step, setStep] = useState(1),
     [method, setMethod] = useState("UPI"),
@@ -29,8 +31,6 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
   const day = params.get("day") || dates[0],
     time = params.get("time") || "7:00 PM",
     cinema = params.get("cinema") || cinemas[0];
-
-  let movie = show.movie || null;
 
   const availableSeats = show?.availableSeatLabels || [];
 
@@ -54,6 +54,10 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
   };
 
   useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     if (!showId) {
       setLoadingShow(false);
       return;
@@ -73,6 +77,7 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
 
         if (!cancelled) {
           setShow(selectedShow || null);
+          setMovie(selectedShow?.movie ? toMovie(selectedShow.movie) : null);
         }
       } catch (error) {
         if (!cancelled) {
@@ -86,7 +91,6 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
     }
 
     fetchShow();
-    movie = show.movie;
 
     return () => {
       cancelled = true;
@@ -115,7 +119,7 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
 
       setBookings((prev) => [booking, ...prev]);
       navigate(`/confirmation/${booking.id}`);
-    } catch (error) {
+    } catch (err) {
       setError(err.message || "Booking failed.");
       // Refresh availability after a failed reservation.
       try {
@@ -142,6 +146,21 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
       setLoading(false);
     }
   };
+
+  if (loadingShow) {
+    return <div className="booking-page">Loading show details...</div>;
+  }
+
+  if (!show || !movie) {
+    return (
+      <div className="booking-page">
+        <h2>Unable to load booking</h2>
+        <p>{error || "Movie or show details are unavailable."}</p>
+        <Link to={`/movie/${id}`}>Back to showtimes</Link>
+      </div>
+    );
+  }
+
   return (
     <main className="booking-page">
       <div className="booking-top">
@@ -167,7 +186,7 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
       <div className="booking-layout">
         <div className="booking-main">
           <div className="show-ticket">
-            <img src={movie.poster} alt="" />
+            <img src={movie.posterUrl} alt="" />
             <div>
               <b>{movie.title}</b>
               <span>{cinema}</span>
