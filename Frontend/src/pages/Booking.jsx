@@ -1,16 +1,25 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { movies, cinemas, dates } from "../data";
 import { money } from "../utils/format";
 import { NotFound } from "../components/common/NotFound";
 import { createBooking } from "../services/bookingService";
+import { api } from "../api";
 
 export function Booking({ city, user, setUser, bookings, setBookings }) {
   const navigate = useNavigate();
-  const { id } = useParams(),
-    movie = movies.find((m) => m.id === id);
+  const { id } = useParams();
+  //movie = movies.find((m) => m.id === id);
   const [params] = useSearchParams();
+
+  const showId = params.get("showId");
+  const [show, setShow] = useState(null);
   const [selected, setSelected] = useState([]),
     [step, setStep] = useState(1),
     [method, setMethod] = useState("UPI"),
@@ -20,12 +29,19 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
   const day = params.get("day") || dates[0],
     time = params.get("time") || "7:00 PM",
     cinema = params.get("cinema") || cinemas[0];
-  if (!movie) return <NotFound />;
-  const occupied = ["A4", "A5", "B7", "C2", "C3", "D8", "E5", "F4", "F5", "G9"];
-  const seatPrice = (s) =>
-    s.startsWith("G") ? 420 : s.startsWith("F") ? 320 : 220;
-  const subtotal = selected.reduce((a, s) => a + seatPrice(s), 0),
-    fee = Math.round(subtotal * 0.025);
+
+  let movie = show.movie || null;
+
+  const availableSeats = show?.availableSeatLabels || [];
+
+  const occupied = show
+    ? generateSeatLabels().filter((seat) => !availableSeats.includes(seat))
+    : [];
+  const seatPrice = () => show?.ticketPrice || 0;
+
+  const subtotal = selected.length * seatPrice();
+  const fee = Math.round(subtotal * 0.025);
+
   const toggle = (s) => {
     if (occupied.includes(s)) return;
     setSelected((prev) =>
@@ -36,6 +52,47 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
           : prev,
     );
   };
+
+  useEffect(() => {
+    if (!showId) {
+      setLoadingShow(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchShow() {
+      try {
+        const allShows = await api(
+          `/shows?city=${encodeURIComponent(city)}&date=${localDate()}`,
+        );
+
+        const selectedShow = allShows.find(
+          (item) => String(item.id) === String(showId),
+        );
+
+        if (!cancelled) {
+          setShow(selectedShow || null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setError(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingShow(false);
+        }
+      }
+    }
+
+    fetchShow();
+    movie = show.movie;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showId, city]);
+
   const pay = async () => {
     if (!selected.length) {
       setError("Choose at least one seat to continue.");
@@ -46,39 +103,44 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
       setError("");
       return;
     }
-    if (!/^\d{10}$/.test(phone)) {
-      setError("Enter a 10-digit demo phone number.");
+    if (!user?.id) {
+      navigate("/login");
       return;
     }
     setError("");
     setLoading(true);
-    
+
     try {
-      const showId = params.get("showId");
-
-      if (!showId) {
-          throw new Error("Show ID is missing.");
-      }
-
-      const booking = await createBooking(
-        showId,
-        user.id,
-        selected
-      );
-
-      seatPrice = booking.totalAmount;
-      subtotal = selected.reduce((a, s) => a + seatPrice(s), 0);
-      fee = Math.round(subtotal * 0.025);
+      const booking = await createBooking(showId, user.id, selected);
 
       setBookings((prev) => [booking, ...prev]);
       navigate(`/confirmation/${booking.id}`);
-      
     } catch (error) {
       setError(err.message || "Booking failed.");
+      // Refresh availability after a failed reservation.
+      try {
+        const allShows = await api(
+          `/shows?city=${encodeURIComponent(city)}&date=${localDate()}`,
+        );
+
+        const updatedShow = allShows.find(
+          (item) => String(item.id) === String(showId),
+        );
+
+        if (updatedShow) {
+          setShow(updatedShow);
+          setSelected((previous) =>
+            previous.filter((seat) =>
+              updatedShow.availableSeatLabels.includes(seat),
+            ),
+          );
+        }
+      } catch {
+        // Preserve the original booking error.
+      }
     } finally {
       setLoading(false);
     }
-  
   };
   return (
     <main className="booking-page">
@@ -269,5 +331,11 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
         </aside>
       </div>
     </main>
+  );
+}
+
+function generateSeatLabels() {
+  return ["A", "B", "C", "D", "E", "F", "G"].flatMap((row) =>
+    Array.from({ length: 10 }, (_, index) => `${row}${index + 1}`),
   );
 }

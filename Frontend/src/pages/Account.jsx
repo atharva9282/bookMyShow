@@ -236,57 +236,59 @@ export function Profile({ user, setUser, bookings }) {
 }
 
 export function Confirm({ bookings }) {
-  const { ref } = useParams(),
-    b = bookings.find((x) => x.ref === ref);
-  if (!b)
+  const { ref } = useParams();
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api(`/bookings/${ref}`)
+      .then(setBooking)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [ref]);
+
+  if (loading) {
+    return <main className="empty">Loading booking...</main>;
+  }
+
+  if (error || !booking) {
     return (
       <main className="empty">
         <h2>Booking not found</h2>
-        <Link to="/movies" className="text-link">
-          Back to movies <ArrowRight size={15} />
-        </Link>
+        <Link to="/movies">Back to movies</Link>
       </main>
     );
+  }
+
   return (
     <main className="confirm-page">
       <div className="confirm-card">
         <div className="confirm-icon">
           <Check />
         </div>
-        <span className="eyebrow">IT’S A DATE</span>
-        <h1>You’re all set.</h1>
-        <p>Your demo booking is confirmed. Your seats are waiting.</p>
+
+        <span className="eyebrow">BOOKING CONFIRMED</span>
+        <h1>You're all set.</h1>
+
         <div className="ticket-stub">
           <div className="stub-info">
-            <span className="eyebrow">REELHOUSE · DEMO TICKET</span>
-            <h2>{b.movie}</h2>
-            <p>{b.cinema}</p>
-            <p>
-              {b.day} <i>·</i> {b.time}
-            </p>
-            <b>SEATS &nbsp; {b.seats.join("  ·  ")}</b>
+            <h2>{booking.movieTitle}</h2>
+            <p>{booking.theatreName}</p>
+            <b>Seats: {booking.seatLabels.join(", ")}</b>
+            <p>Booking ID: {booking.id}</p>
+            <p>Status: {booking.status}</p>
           </div>
-          <div className="qr">
-            <Qr />
-            <small>DEMO ONLY</small>
-          </div>
-          <span className="ticket-ref">BOOKING REF &nbsp; {b.ref}</span>
         </div>
+
         <div className="paid-row">
-          <span>Mock amount paid</span>
-          <b>{money(b.amount)}</b>
+          <span>Total amount</span>
+          <b>{money(booking.totalAmount)}</b>
         </div>
-        <div className="confirm-actions">
-          <Link className="button button-coral" to="/profile">
-            View my bookings <ArrowRight size={16} />
-          </Link>
-          <Link className="button button-outline" to="/">
-            Back home
-          </Link>
-        </div>
-        <small className="demo-hint">
-          This is a simulated ticket and is not valid for entry.
-        </small>
+
+        <Link className="button button-coral" to="/profile">
+          View my bookings
+        </Link>
       </div>
     </main>
   );
