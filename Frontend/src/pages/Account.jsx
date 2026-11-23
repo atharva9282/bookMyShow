@@ -162,8 +162,45 @@ export function Login({ setUser }) {
   );
 }
 
-export function Profile({ user, setUser, bookings }) {
+export function Profile({ user, setUser, bookings: initialBookings = [] }) {
   const nav = useNavigate();
+  const [bookings, setBookings] = useState(initialBookings);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+
+    async function fetchBookings() {
+      try {
+        setBookingLoading(true);
+        setBookingError("");
+
+        const data = await api("/bookings");
+
+        if (active) {
+          setBookings(data);
+        }
+      } catch (error) {
+        if (active) {
+          setBookingError(error.message || "Unable to fetch bookings.");
+        }
+      } finally {
+        if (active) {
+          setBookingLoading(false);
+        }
+      }
+    }
+
+    fetchBookings();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   if (!user)
     return (
       <main className="empty profile-empty">
@@ -188,7 +225,16 @@ export function Profile({ user, setUser, bookings }) {
           <h2>My bookings</h2>
         </div>
       </div>
-      {bookings.length ? (
+      {bookingLoading ? (
+        <div className="empty">
+          <p>Loading your bookings...</p>
+        </div>
+      ) : bookingError ? (
+        <div className="empty">
+          <h3>Couldn't load your bookings.</h3>
+          <p>{bookingError}</p>
+        </div>
+      ) : bookings.length ? (
         <div className="booking-history">
           {bookings.map((b) => (
             <div className="history-card" key={b.id}>

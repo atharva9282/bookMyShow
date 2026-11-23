@@ -22,9 +22,9 @@ public class BookingController {
     }
 
     @GetMapping("/bookings")
-    public List<BookingDto.BookingResponse> myBookings(Long profileId)
+    public List<BookingDto.BookingResponse> myBookings(Principal principal)
     {
-        return bookingService.findByProfileId(profileId);
+        return bookingService.findByEmail(principal.getName());
     }
 
     @GetMapping("/bookings/{bookingId}")

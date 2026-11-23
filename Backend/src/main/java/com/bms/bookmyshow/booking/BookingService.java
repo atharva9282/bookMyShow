@@ -67,14 +67,13 @@ public class BookingService {
     }
 
     @Transactional
-    List<BookingDto.BookingResponse> findByProfileId(Long userId)
+    List<BookingDto.BookingResponse> findByEmail(String email)
     {
-        if(!userRepository.existsById(userId))
-        {
-            throw new ResourceNotFoundException("Profile Not Found");
-        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User doesn't exist"));
 
-        return bookingRepository.findByUserIdOrderByBookedAtDesc(userId).stream()
+        return bookingRepository.findByUserIdOrderByBookedAtDesc(user.getId()).stream()
                 .map(BookingDto.BookingResponse::from).toList();
     }
 
