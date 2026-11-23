@@ -17,26 +17,46 @@ export function Movie({ city }) {
   const { id } = useParams();
   const [movie, setMovie] = useState(null);
   const [shows, setShows] = useState([]);
+  const [movieLoading, setMovieLoading] = useState(false);
+  const [showsLoading, setShowsLoading] = useState(false);
+
   useEffect(() => {
     async function getMovie() {
       try {
+        setMovieLoading(true);
         const items = await api("/movies");
         const selectedMovie = items.map(toMovie).find((x) => x.id == id);
         setMovie(selectedMovie || null);
       } catch (error) {
         
+      } finally {
+        setMovieLoading(false);
       }
         
     }
     getMovie();
   }, [id]);
+  
   const [day, setDay] = useState(dates[0]),
     [trailer, setTrailer] = useState(false);
+
   useEffect(() => {
-    api(`/shows?city=${encodeURIComponent(city)}&date=${localDate()}`)
-      .then(setShows)
-      .catch(() => setShows([]));
+
+      async function getShow() {
+      try {
+        setShowsLoading(true);
+        const shows = await api(`/shows?city=${encodeURIComponent(city)}&date=${localDate()}`);
+        setShows(shows);
+      } catch (error) {
+        
+      } finally {
+        setShowsLoading(false);
+      }
+        
+    }
+    getShow();
   }, [city, day]);
+  if (movieLoading) return <MovieSkeleton />;
   if (!movie) return <NotFound />;
   return (
     <main className="detail-page">
@@ -103,7 +123,11 @@ export function Movie({ city }) {
             </button>
           ))}
         </div>
-        {shows.filter((show) => String(show.movie.id) === id).length ? (
+
+        {showsLoading ? (
+          <ShowtimesSkeleton />
+        ) :
+        shows.filter((show) => String(show.movie.id) === id).length ? (
           <div className="cinema-list">
             {shows
               .filter((show) => String(show.movie.id) === id)
@@ -133,6 +157,7 @@ export function Movie({ city }) {
         ) : (
           <CinemaTimes movie={movie} day={day} />
         )}
+
       </section>
       {trailer && (
         <Modal title="A little preview" close={() => setTrailer(false)}>
@@ -145,5 +170,49 @@ export function Movie({ city }) {
         </Modal>
       )}
     </main>
+  );
+}
+
+
+// Movie details loading skeleton
+function MovieSkeleton() {
+  return (
+    <main className="detail-page">
+      <div className="detail-backdrop" />
+      <div className="detail-hero animate-pulse">
+        <div className="detail-poster rounded-xl bg-white/10" />
+        <div className="detail-copy space-y-4">
+          <div className="h-3 w-32 rounded bg-white/10" />
+          <div className="h-10 w-3/4 rounded bg-white/10" />
+          <div className="h-4 w-1/2 rounded bg-white/10" />
+          <div className="h-20 w-full rounded bg-white/10" />
+          <div className="h-10 w-36 rounded bg-white/10" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// Showtimes loading skeleton
+function ShowtimesSkeleton() {
+  return (
+    <div className="cinema-list animate-pulse">
+      {[1, 2, 3].map((item) => (
+        <div className="cinema-row" key={item}>
+          <div className="w-full space-y-3">
+            <div className="h-5 w-1/3 rounded bg-white/10" />
+            <div className="h-3 w-2/3 rounded bg-white/10" />
+            <div className="flex gap-3 pt-2">
+              {[1, 2, 3].map((time) => (
+                <div
+                  key={time}
+                  className="h-9 w-20 rounded-lg bg-white/10"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

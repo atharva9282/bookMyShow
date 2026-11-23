@@ -52,7 +52,7 @@ export function Booking({ city, user, setUser, bookings, setBookings }) {
           : prev,
     );
   };
-
+  
   useEffect(() => {
     if (!user) {
       navigate("/login");

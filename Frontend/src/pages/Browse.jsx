@@ -14,16 +14,32 @@ export function Browse({ type, city }) {
   const isMovie = type === "movie";
   const [catalog, setCatalog] = useState([]);
   const [theatres, setTheatres] = useState([]);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     async function getMovies() {
-      await api("/movies")
-        .then((items) => setCatalog(items.map(toMovie)))
-        .catch(() => {});
+      try {
+        setLoading(true);
+        const items = await api("/movies");
+        setCatalog(items.map(toMovie));
+      } catch (error) {
+        
+      } finally {
+        setLoading(false);
+      }      
     }
+
     async function getTheatres() {
-      let res = await api(`/theatres?city=${encodeURIComponent(city)}`);
-      setTheatres(res);
+      try {
+        setLoading(true);
+        const res = await api(`/theatres?city=${encodeURIComponent(city)}`);
+        setTheatres(res);
+      } catch (error) {
+        
+      } finally {
+        setLoading(false);
+      }
     }
+
     if (isMovie) {
       getMovies();
     } else {
@@ -119,7 +135,14 @@ export function Browse({ type, city }) {
           <option>A–Z</option>
         </select>
       </div>
-      {filtered.length ? (
+      {loading ? (
+        isMovie ? (
+          <MovieSkeleton />
+        ) : (
+          <TheatreSkeleton />
+        )
+      ) :
+       filtered.length ? (
         <>
           <div
             className={
@@ -167,5 +190,38 @@ export function Browse({ type, city }) {
         </div>
       )}
     </main>
+  );
+}
+
+// Loading skeleton for movie cards
+function MovieSkeleton() {
+  return (
+    <div className="movie-grid browse-grid">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div className="animate-pulse" key={i}>
+          <div className="aspect-[2/3] w-full rounded-xl bg-white/10" />
+          <div className="mt-4 h-4 w-3/4 rounded bg-white/10" />
+          <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Loading skeleton for theatre cards
+function TheatreSkeleton() {
+  return (
+    <div className="event-grid browse-events">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <article className="theatre-card animate-pulse" key={i}>
+          <div className="theatre-card-content">
+            <div className="mb-4 h-3 w-20 rounded bg-white/10" />
+            <div className="mb-3 h-5 w-3/4 rounded bg-white/10" />
+            <div className="h-3 w-full rounded bg-white/10" />
+            <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }

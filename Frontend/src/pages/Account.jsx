@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -191,22 +191,23 @@ export function Profile({ user, setUser, bookings }) {
       {bookings.length ? (
         <div className="booking-history">
           {bookings.map((b) => (
-            <div className="history-card" key={b.ref}>
-              <img
-                src={movies.find((m) => m.id === b.movieId)?.poster}
-                alt=""
-              />
+            <div className="history-card" key={b.id}>
               <div>
-                <span className="eyebrow">MOVIE · {b.ref}</span>
-                <h3>{b.movie}</h3>
-                <p>
-                  {b.cinema} <i>·</i> {b.day} at {b.time}
-                </p>
+                <span className="eyebrow">BOOKING #{b.id}</span>
+
+                <h3>{b.movieTitle}</h3>
+
+                <p>{b.theatreName}</p>
+
                 <small>
-                  Seats {b.seats.join(", ")} <i>·</i> {money(b.amount)} <i>·</i>{" "}
-                  Demo booking
+                  Seats {(b.seatLabels ?? []).join(", ")}
+                  {" · "}
+                  {money(b.totalAmount)}
+                  {" · "}
+                  {b.status}
                 </small>
               </div>
+
               <Ticket className="history-icon" />
             </div>
           ))}

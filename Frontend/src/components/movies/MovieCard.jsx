@@ -30,7 +30,7 @@ export function MovieCard({movie, index = 0}) {
                 <p className="lang">
                     {movie.language} <span>·</span> {movie.duration}
                 </p>
-                <Link className="book-small" to={`/book/${movie.id}`}>
+                <Link className="book-small" to={`/movie/${movie.id}`}>
                     Book tickets <ArrowRight size={14}/>
                 </Link>
             </div>

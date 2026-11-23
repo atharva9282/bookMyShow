@@ -82,8 +82,9 @@ export function Header({ city, setCity, user }) {
 
   return (
     <header className="topbar" ref={rootRef}>
-      <div className="nav-wrap">
-        <Link className="brand" to="/" aria-label="Reelhouse home">
+      <div className="nav-wrap mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link className="brand" to="/" aria-label="Reelhouse home">
           <span className="brand-mark">
             <Clapperboard size={19} />
           </span>
@@ -129,6 +130,7 @@ export function Header({ city, setCity, user }) {
               ))}
             </div>
           )}
+        </div>
         </div>
 
         <form
@@ -197,7 +199,8 @@ export function Header({ city, setCity, user }) {
           )}
         </form>
 
-        <nav className="desktop-links" aria-label="Main navigation">
+        <div className="flex items-center gap-8 text-sm font-medium">
+          <nav className="desktop-links md:flex items-center gap-8 text-sm font-medium" aria-label="Main navigation">
           <NavLink to="/movies">Movies</NavLink>
           <NavLink
             to="/theatres"
@@ -206,11 +209,9 @@ export function Header({ city, setCity, user }) {
             Theatre
           </NavLink>
         </nav>
-        <Link className="profile-link" to={user ? "/profile" : "/login"}>
-          <UserRound size={17} />
-          <span>{user?.name?.split(" ")[0] || "Sign in"}</span>
-        </Link>
-        <button
+        </div>
+
+        {/* <button
           className="icon-button mobile-search-toggle"
           type="button"
           aria-label="Search"
@@ -218,7 +219,8 @@ export function Header({ city, setCity, user }) {
           onClick={() => setMobileSearch((open) => !open)}
         >
           {mobileSearch ? <X size={19} /> : <Search size={19} />}
-        </button>
+        </button> */}
+
         <button
           className="icon-button mobile-menu"
           type="button"
@@ -228,6 +230,12 @@ export function Header({ city, setCity, user }) {
         >
           {menu ? <X /> : <Menu />}
         </button>
+        <div className="">
+          <Link className="profile-link mr-0" to={user ? "/profile" : "/login"}>
+          <UserRound size={17} />
+          <span>{user?.name?.split(" ")[0] || "Sign in"}</span>
+        </Link>
+        </div>
       </div>
       {mobileSearch && (
         <form
@@ -278,11 +286,8 @@ export function Header({ city, setCity, user }) {
           <NavLink to="/events" onClick={() => setMenu(false)}>
             Events
           </NavLink>
-          <NavLink to="/events#theatre" onClick={() => setMenu(false)}>
+          <NavLink to="/theatres" onClick={() => setMenu(false)}>
             Theatre
-          </NavLink>
-          <NavLink to="/events#sports" onClick={() => setMenu(false)}>
-            Sports
           </NavLink>
           <Link
             to={user ? "/profile" : "/login"}

@@ -14,9 +14,7 @@ import {NotFound} from "./components/common/NotFound";
 function App() {
     const [city, setCity] = useState(() => readStorage("rh-city", "Mumbai"));
     const [user, setUser] = useState(() => readStorage("rh-user", null));
-    const [bookings, setBookings] = useState(() =>
-        readStorage("rh-bookings", []),
-    );
+    const [bookings, setBookings] = useState([]);
 
     useEffect(
         () => localStorage.setItem("rh-city", JSON.stringify(city)),
@@ -25,10 +23,6 @@ function App() {
     useEffect(
         () => localStorage.setItem("rh-user", JSON.stringify(user)),
         [user],
-    );
-    useEffect(
-        () => localStorage.setItem("rh-bookings", JSON.stringify(bookings)),
-        [bookings],
     );
 
     return (

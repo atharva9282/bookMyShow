@@ -12,11 +12,18 @@ import { api, toMovie } from "../api";
 export function Home({ city }) {
   const [slide, setSlide] = useState(0);
   const [catalog, setCatalog] = useState([]);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     async function getMovies() {
-        await api("/movies")
-            .then((items) => setCatalog(items.map(toMovie)))
-            .catch(() => {});
+      try {
+        setLoading(true);
+        const items = await api("/movies");
+        setCatalog(items.map(toMovie));
+      } catch (error) {
+        
+      } finally {
+        setLoading(false);
+      }      
     }
     getMovies();
   }, []);
@@ -131,7 +138,9 @@ export function Home({ city }) {
           action="All movies"
         />
         <div className="movie-grid">
-          {catalog.slice(0, 5).map((m, i) => (
+          {loading ? (
+            <MovieSkeleton />
+          ) : catalog.slice(0, 5).map((m, i) => (
             <MovieCard key={m.id} movie={m} index={i} />
           ))}
         </div>
@@ -146,10 +155,11 @@ export function Home({ city }) {
             From a darkened room and a great story to lights up and live music.
           </p>
         </div>
-        <Link className="button button-outline" to="/events">
+        <Link className="button button-outline" to="/movies">
           Explore what’s on <ArrowRight size={16} />
         </Link>
       </section>
+      
       <section className="section events-section">
         <SectionHead
           eyebrow="OUT OF OFFICE"
@@ -163,7 +173,31 @@ export function Home({ city }) {
           ))}
         </div>
       </section>
+
       <Promo />
     </main>
+  );
+}
+
+
+function MovieSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div className="movie-skeleton animate-pulse" key={i}>
+          {/* Poster */}
+          <div className="aspect-[2/3] w-full rounded-xl bg-white/10" />
+
+          {/* Movie title */}
+          <div className="mt-4 h-4 w-3/4 rounded bg-white/10" />
+
+          {/* Movie details */}
+          <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+
+          {/* Rating / metadata */}
+          <div className="mt-3 h-3 w-1/3 rounded bg-white/10" />
+        </div>
+      ))}
+    </>
   );
 }
